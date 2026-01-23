@@ -274,8 +274,6 @@ export function simulateOnce(spec: SimulationSpec, baseSeed: string, runIndex: n
         }
         if (!canApproveWithLimits(userId, amount, event.timeSec)) {
           limitDeclines += 1
-          declines.push(event.txnId)
-          addTimeSeriesPoint(series, binSize, event.timeSec, 'declines')
           continue
         }
         const availableBalance = balances[userId] - holdTotals[userId]
@@ -416,8 +414,6 @@ export function simulateOnce(spec: SimulationSpec, baseSeed: string, runIndex: n
         }
         if (!canApproveWithLimits(userId, event.amount, ctx.requestTime)) {
           limitDeclines += 1
-          declines.push(event.txnId)
-          addTimeSeriesPoint(series, binSize, event.timeSec, 'declines')
           continue
         }
         if (balances[userId] < event.amount) {
@@ -512,7 +508,10 @@ export function simulateOnce(spec: SimulationSpec, baseSeed: string, runIndex: n
       limitDeclines,
       totalSpent,
       insufficientFundsSkipped,
-      totalEvents
+      totalEvents,
+      fraudApprovalRateNoLimits: 0,
+      fraudExposureTotalNoLimits: 0,
+      fraudLossTotalNoLimits: 0
     },
     timeSeries: series,
     settlementTimes,

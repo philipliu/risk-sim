@@ -61,13 +61,13 @@ export function ResultsPanel({ results }: Props) {
           <p>Retry p95: {metrics.retryP95.toFixed(1)}</p>
         </div>
         <div className="kpi-card">
-          <h3>Exposure</h3>
-          <p className="section-note">Approved but not settled amounts (Mode B risk).</p>
-          <p>Exposure events: {metrics.exposureCount}</p>
-          <p>Total exposure: {metrics.totalExposure.toFixed(2)}</p>
-          <p>Peak exposure: {metrics.peakExposure.toFixed(2)}</p>
-          <p>P95 exposure: {metrics.p95Exposure.toFixed(2)}</p>
-          <p>P95 exposure duration: {formatSeconds(metrics.exposureDurationP95Sec)}</p>
+          <h3>At-Risk Funds</h3>
+          <p className="section-note">Approved amounts not yet settled on-chain (Mode B risk).</p>
+          <p>At-risk events: {metrics.exposureCount}</p>
+          <p>Total at-risk: {metrics.totalExposure.toFixed(2)}</p>
+          <p>Peak at-risk: {metrics.peakExposure.toFixed(2)}</p>
+          <p>P95 at-risk: {metrics.p95Exposure.toFixed(2)}</p>
+          <p>P95 at-risk duration: {formatSeconds(metrics.exposureDurationP95Sec)}</p>
         </div>
         <div className="kpi-card">
           <h3>Holds & Pre-auth</h3>
@@ -94,15 +94,15 @@ export function ResultsPanel({ results }: Props) {
 
       <section className="chart-grid">
         <div className="chart-card">
-          <h3>Exposure ($) + Auth Outcomes Over Time</h3>
+          <h3>At-Risk Funds ($) + Auth Outcomes Over Time</h3>
           <ResponsiveContainer width="100%" height={260}>
             <LineChart data={timeSeries}>
               <CartesianGrid strokeDasharray="3 3" />
               <XAxis dataKey="timeSec" tickFormatter={(v) => `${(v / 3600).toFixed(1)}h`} />
               <YAxis yAxisId="left" tickFormatter={(v) => `$${v.toFixed(0)}`} />
               <YAxis yAxisId="right" orientation="right" />
-              <Tooltip formatter={(value, name) => (name === 'exposure' ? `$${Number(value).toFixed(2)}` : value)} />
-              <Line yAxisId="left" type="monotone" dataKey="exposure" stroke="#f97316" />
+              <Tooltip formatter={(value, name) => (name === 'At-risk' ? `$${Number(value).toFixed(2)}` : value)} />
+              <Line yAxisId="left" type="monotone" dataKey="exposure" name="At-risk" stroke="#f97316" />
               <Line yAxisId="right" type="monotone" dataKey="approvals" stroke="#10b981" />
               <Line yAxisId="right" type="monotone" dataKey="declines" stroke="#ef4444" />
               <Line yAxisId="right" type="monotone" dataKey="timeouts" stroke="#a855f7" />
@@ -134,7 +134,7 @@ export function ResultsPanel({ results }: Props) {
           </ResponsiveContainer>
         </div>
         <div className="chart-card">
-          <h3>Exposure Amount Percentiles ($)</h3>
+          <h3>At-Risk Amount Percentiles ($)</h3>
           <ResponsiveContainer width="100%" height={240}>
             <BarChart data={results.exposurePercentiles}>
               <CartesianGrid strokeDasharray="3 3" />
@@ -146,7 +146,7 @@ export function ResultsPanel({ results }: Props) {
           </ResponsiveContainer>
         </div>
         <div className="chart-card">
-          <h3>Exposure per User</h3>
+          <h3>At-Risk Amount per User</h3>
           <ResponsiveContainer width="100%" height={240}>
             <BarChart data={results.exposurePerUserHistogram}>
               <CartesianGrid strokeDasharray="3 3" />
@@ -158,7 +158,7 @@ export function ResultsPanel({ results }: Props) {
           </ResponsiveContainer>
         </div>
         <div className="chart-card">
-          <h3>Exposure Duration Percentiles (s)</h3>
+          <h3>At-Risk Duration Percentiles (s)</h3>
           <ResponsiveContainer width="100%" height={240}>
             <BarChart data={results.exposureDurationPercentiles}>
               <CartesianGrid strokeDasharray="3 3" />

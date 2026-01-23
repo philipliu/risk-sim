@@ -782,9 +782,14 @@ export default function App() {
                     <div key={item.id} className="history-item">
                       <div>
                         <strong>{new Date(item.timestamp).toLocaleString()}</strong>
-                        <p className="muted">
-                          {item.spec.mode === 'wait_on_chain' ? 'Wait on-chain' : 'Off-chain hold'} · Seed {item.spec.seed}
-                        </p>
+                      <p className="muted">
+                        {item.spec.mode === 'wait_on_chain' ? 'Wait on-chain' : 'Off-chain hold'} · Seed {item.spec.seed} ·
+                        Approval {Math.round(item.results.metrics.approvalRate * 100)}% ·
+                        Auth {item.spec.authTimeoutSec}s ·
+                        Ledger {item.spec.stellar.ledgerCloseMean}s ·
+                        Fraud loss ${item.results.metrics.fraudLossTotal.toFixed(0)} ·
+                        Spent ${item.results.metrics.totalSpent.toFixed(0)}
+                      </p>
                       </div>
                       <div className="history-buttons">
                       <button
