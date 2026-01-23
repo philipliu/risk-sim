@@ -72,6 +72,12 @@ p {
   font-size: 0.85rem;
 }
 
+.run-actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
 .run-status {
   display: flex;
   align-items: center;

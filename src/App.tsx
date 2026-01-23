@@ -160,6 +160,35 @@ export default function App() {
     })
   }
 
+  const handleExport = () => {
+    const payload = JSON.stringify(spec, null, 2)
+    const blob = new Blob([payload], { type: 'application/json' })
+    const url = URL.createObjectURL(blob)
+    const link = document.createElement('a')
+    link.href = url
+    link.download = `risk-sim-settings-${Date.now()}.json`
+    document.body.appendChild(link)
+    link.click()
+    link.remove()
+    URL.revokeObjectURL(url)
+  }
+
+  const handleImport = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0]
+    if (!file) return
+    const reader = new FileReader()
+    reader.onload = () => {
+      try {
+        const parsed = JSON.parse(String(reader.result)) as SimulationSpec
+        setSpec(parsed)
+      } catch {
+        // Ignore invalid JSON
+      }
+    }
+    reader.readAsText(file)
+    event.target.value = ''
+  }
+
   const summary = useMemo(() => {
     return `Seed: ${spec.seed} | Runs: ${spec.monteCarloRuns} | Horizon: ${spec.horizonHours}h`
   }, [spec])
@@ -186,6 +215,15 @@ export default function App() {
         </div>
         <div className="run-controls">
           <p>{summary}</p>
+          <div className="run-actions">
+            <button className="ghost-button" onClick={handleExport} type="button">
+              Export JSON
+            </button>
+            <label className="ghost-button">
+              Import JSON
+              <input type="file" accept="application/json" onChange={handleImport} hidden />
+            </label>
+          </div>
           {isRunning && (
             <div className="run-status">
               <div className="progress-bar">
