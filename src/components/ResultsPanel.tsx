@@ -41,6 +41,7 @@ export function ResultsPanel({ results }: Props) {
       <section className="kpi-grid">
         <div className="kpi-card">
           <h3>Authorization</h3>
+          <p className="section-note">Auth outcomes and latency for issuer responses.</p>
           <p>Approval rate: {formatPercent(metrics.approvalRate)}</p>
           <p>Decline rate: {formatPercent(metrics.declineRate)}</p>
           <p>Timeout rate: {formatPercent(metrics.timeoutRate)}</p>
@@ -52,6 +53,7 @@ export function ResultsPanel({ results }: Props) {
         </div>
         <div className="kpi-card">
           <h3>Settlement</h3>
+          <p className="section-note">On-chain confirmation performance and retries.</p>
           <p>Success rate: {formatPercent(metrics.settlementSuccessRate)}</p>
           <p>Fail rate: {formatPercent(metrics.settlementFailRate)}</p>
           <p>Confirm avg: {formatSeconds(metrics.avgSettlementTimeSec)}</p>
@@ -60,6 +62,7 @@ export function ResultsPanel({ results }: Props) {
         </div>
         <div className="kpi-card">
           <h3>Exposure</h3>
+          <p className="section-note">Approved but not settled amounts (Mode B risk).</p>
           <p>Exposure events: {metrics.exposureCount}</p>
           <p>Total exposure: {metrics.totalExposure.toFixed(2)}</p>
           <p>Peak exposure: {metrics.peakExposure.toFixed(2)}</p>
@@ -68,6 +71,7 @@ export function ResultsPanel({ results }: Props) {
         </div>
         <div className="kpi-card">
           <h3>Holds & Pre-auth</h3>
+          <p className="section-note">Hold pressure and pre-auth deltas.</p>
           <p>Overspend prevented: {metrics.overspendPrevented}</p>
           <p>Avg pending holds: {metrics.avgPendingHolds.toFixed(2)}</p>
           <p>P95 pending holds: {metrics.p95PendingHolds.toFixed(2)}</p>
@@ -76,6 +80,7 @@ export function ResultsPanel({ results }: Props) {
         </div>
         <div className="kpi-card">
           <h3>Fraud</h3>
+          <p className="section-note">Double-spend risk outcomes and losses.</p>
           <p>Attempt rate: {formatPercent(metrics.fraudAttemptRate)}</p>
           <p>Approval rate: {formatPercent(metrics.fraudApprovalRate)}</p>
           <p>Fraud exposure: {metrics.fraudExposureTotal.toFixed(2)}</p>
@@ -89,14 +94,14 @@ export function ResultsPanel({ results }: Props) {
 
       <section className="chart-grid">
         <div className="chart-card">
-          <h3>Exposure + Auth Outcomes Over Time</h3>
+          <h3>Exposure ($) + Auth Outcomes Over Time</h3>
           <ResponsiveContainer width="100%" height={260}>
             <LineChart data={timeSeries}>
               <CartesianGrid strokeDasharray="3 3" />
               <XAxis dataKey="timeSec" tickFormatter={(v) => `${(v / 3600).toFixed(1)}h`} />
-              <YAxis yAxisId="left" />
+              <YAxis yAxisId="left" tickFormatter={(v) => `$${v.toFixed(0)}`} />
               <YAxis yAxisId="right" orientation="right" />
-              <Tooltip />
+              <Tooltip formatter={(value, name) => (name === 'exposure' ? `$${Number(value).toFixed(2)}` : value)} />
               <Line yAxisId="left" type="monotone" dataKey="exposure" stroke="#f97316" />
               <Line yAxisId="right" type="monotone" dataKey="approvals" stroke="#10b981" />
               <Line yAxisId="right" type="monotone" dataKey="declines" stroke="#ef4444" />
@@ -105,37 +110,37 @@ export function ResultsPanel({ results }: Props) {
           </ResponsiveContainer>
         </div>
         <div className="chart-card">
-          <h3>Settlement Time Percentiles</h3>
+          <h3>Settlement Time Percentiles (s)</h3>
           <ResponsiveContainer width="100%" height={240}>
             <BarChart data={results.settlementPercentiles}>
               <CartesianGrid strokeDasharray="3 3" />
               <XAxis dataKey="label" />
-              <YAxis />
-              <Tooltip />
+              <YAxis tickFormatter={(v) => `${v.toFixed(1)}s`} />
+              <Tooltip formatter={(value) => `${Number(value).toFixed(2)}s`} />
               <Bar dataKey="value" fill="#38bdf8" />
             </BarChart>
           </ResponsiveContainer>
         </div>
         <div className="chart-card">
-          <h3>Auth Time Percentiles</h3>
+          <h3>Auth Time Percentiles (s)</h3>
           <ResponsiveContainer width="100%" height={240}>
             <BarChart data={results.authPercentiles}>
               <CartesianGrid strokeDasharray="3 3" />
               <XAxis dataKey="label" />
-              <YAxis />
-              <Tooltip />
+              <YAxis tickFormatter={(v) => `${v.toFixed(1)}s`} />
+              <Tooltip formatter={(value) => `${Number(value).toFixed(2)}s`} />
               <Bar dataKey="value" fill="#34d399" />
             </BarChart>
           </ResponsiveContainer>
         </div>
         <div className="chart-card">
-          <h3>Exposure Amount Percentiles</h3>
+          <h3>Exposure Amount Percentiles ($)</h3>
           <ResponsiveContainer width="100%" height={240}>
             <BarChart data={results.exposurePercentiles}>
               <CartesianGrid strokeDasharray="3 3" />
               <XAxis dataKey="label" />
-              <YAxis />
-              <Tooltip />
+              <YAxis tickFormatter={(v) => `$${v.toFixed(0)}`} />
+              <Tooltip formatter={(value) => `$${Number(value).toFixed(2)}`} />
               <Bar dataKey="value" fill="#fb7185" />
             </BarChart>
           </ResponsiveContainer>
@@ -146,20 +151,20 @@ export function ResultsPanel({ results }: Props) {
             <BarChart data={results.exposurePerUserHistogram}>
               <CartesianGrid strokeDasharray="3 3" />
               <XAxis dataKey="label" hide />
-              <YAxis />
-              <Tooltip />
+              <YAxis tickFormatter={(v) => `$${v.toFixed(0)}`} />
+              <Tooltip formatter={(value) => `$${Number(value).toFixed(2)}`} />
               <Bar dataKey="value" fill="#facc15" />
             </BarChart>
           </ResponsiveContainer>
         </div>
         <div className="chart-card">
-          <h3>Exposure Duration Percentiles</h3>
+          <h3>Exposure Duration Percentiles (s)</h3>
           <ResponsiveContainer width="100%" height={240}>
             <BarChart data={results.exposureDurationPercentiles}>
               <CartesianGrid strokeDasharray="3 3" />
               <XAxis dataKey="label" />
-              <YAxis />
-              <Tooltip />
+              <YAxis tickFormatter={(v) => `${v.toFixed(1)}s`} />
+              <Tooltip formatter={(value) => `${Number(value).toFixed(2)}s`} />
               <Bar dataKey="value" fill="#f59e0b" />
             </BarChart>
           </ResponsiveContainer>

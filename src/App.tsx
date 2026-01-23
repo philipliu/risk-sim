@@ -787,13 +787,16 @@ export default function App() {
                         </p>
                       </div>
                       <div className="history-buttons">
-                        <button
-                          className="ghost-button"
-                          onClick={() => setResults(item.results)}
-                          type="button"
-                        >
-                          View
-                        </button>
+                      <button
+                        className="ghost-button"
+                        onClick={() => {
+                          setResults(item.results)
+                          setSpec(item.spec)
+                        }}
+                        type="button"
+                      >
+                        View
+                      </button>
                         <button
                           className="ghost-button"
                           onClick={() => setSpec(item.spec)}

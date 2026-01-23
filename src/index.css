@@ -356,6 +356,12 @@ select {
   box-shadow: 0 10px 25px rgba(30, 24, 18, 0.08);
 }
 
+.section-note {
+  font-size: 0.75rem;
+  color: var(--muted);
+  margin-bottom: 6px;
+}
+
 .chart-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));

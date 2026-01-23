@@ -2,7 +2,7 @@ import { SimulationSpec } from './types'
 
 export const defaultSpec: SimulationSpec = {
   horizonHours: 24,
-  monteCarloRuns: 1,
+  monteCarloRuns: 5,
   seed: 'stellar-001',
   mode: 'offchain_hold',
   authTimeoutSec: 5,
@@ -97,14 +97,14 @@ export const defaultSpec: SimulationSpec = {
     completionMultiplierP95: 1.2
   },
   fraud: {
-    enabled: false,
+    enabled: true,
     fraudAttemptRate: 0.008,
     fraudAmountMultiplierMean: 1.4,
     fraudAmountMultiplierP95: 2.2,
     autoDeclineRate: 0.6
   },
   spendLimits: {
-    enabled: false,
+    enabled: true,
     perTransactionLimit: 300,
     perUserDailyLimit: 1200,
     perUserTimeslotLimit: 400,
