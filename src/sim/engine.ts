@@ -206,7 +206,6 @@ export function simulateOnce(spec: SimulationSpec, baseSeed: string, runIndex: n
   let fraudAttempts = 0
   let fraudApprovals = 0
   let fraudExposureTotal = 0
-  let fraudApprovedAmount = 0
   let fraudLossTotal = 0
   let limitDeclines = 0
   let totalSpent = 0
@@ -292,8 +291,7 @@ export function simulateOnce(spec: SimulationSpec, baseSeed: string, runIndex: n
         applySpendLimits(userId, amount, event.timeSec)
         totalSpent += amount
         if (isFraud) {
-          fraudApprovedAmount += amount
-          fraudLossTotal += amount
+          // Loss only occurs if on-chain settlement fails (double-spend) in mode B.
         }
 
         const approvalTime = issuerDone
@@ -403,7 +401,8 @@ export function simulateOnce(spec: SimulationSpec, baseSeed: string, runIndex: n
         const ctx = authContext.get(event.txnId)
         if (!ctx) continue
         const authTime = (event.timeSec - ctx.requestTime) + ctx.legsOut
-        if (authTime > spec.authTimeoutSec || !settlement.confirmed) {
+        const confirmed = settlement.confirmed && !ctx.isFraud
+        if (authTime > spec.authTimeoutSec || !confirmed) {
           if (authTime > spec.authTimeoutSec) {
             timeouts.push(event.txnId)
             addTimeSeriesPoint(series, binSize, event.timeSec, 'timeouts')
@@ -432,15 +431,11 @@ export function simulateOnce(spec: SimulationSpec, baseSeed: string, runIndex: n
         addTimeSeriesPoint(series, binSize, event.timeSec, 'approvals')
         applySpendLimits(userId, event.amount, ctx.requestTime)
         totalSpent += event.amount
-        if (ctx.isFraud) {
-          fraudApprovedAmount += event.amount
-          fraudLossTotal += event.amount
-        }
       } else {
         const hold = holdByTxn.get(event.txnId)
         const approvalTime = hold?.approvalTime ?? event.timeSec
         const settlementTime = settlement.timeSec
-        let confirmed = settlement.confirmed
+        let confirmed = settlement.confirmed && !event.isFraud
         if (confirmed && balances[userId] >= event.amount) {
           balances[userId] -= event.amount
         } else {
@@ -463,6 +458,7 @@ export function simulateOnce(spec: SimulationSpec, baseSeed: string, runIndex: n
           exposureDurations.push(endTime - approvalTime)
           if (event.isFraud) {
             fraudExposureTotal += event.amount
+            fraudLossTotal += event.amount
           }
         }
 
