@@ -158,6 +158,7 @@ export interface SimulationMetrics {
   fraudExposureTotalNoLimits: number
   fraudLossTotalNoLimits: number
   insufficientFundsSkipped: number
+  totalEvents: number
 }
 
 export interface SimulationResults {
@@ -170,6 +171,7 @@ export interface SimulationResults {
   settlementPercentiles: HistogramBin[]
   authPercentiles: HistogramBin[]
   exposurePercentiles: HistogramBin[]
+  exposureDurationPercentiles: HistogramBin[]
   retryHistogram: HistogramBin[]
   exposureEvents: ExposureEvent[]
   scenarioSummary: string

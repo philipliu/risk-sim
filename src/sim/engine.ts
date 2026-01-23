@@ -210,6 +210,7 @@ export function simulateOnce(spec: SimulationSpec, baseSeed: string, runIndex: n
   let limitDeclines = 0
   let totalSpent = 0
   let insufficientFundsSkipped = 0
+  let totalEvents = 0
 
   const { series, binSize } = initTimeSeries(horizonSec, 120)
 
@@ -224,6 +225,7 @@ export function simulateOnce(spec: SimulationSpec, baseSeed: string, runIndex: n
         continue
       }
       let amount = event.amount
+      totalEvents += 1
       const isFraud = spec.fraud.enabled && rng() < spec.fraud.fraudAttemptRate
       if (isFraud) {
         fraudAttempts += 1
@@ -509,7 +511,8 @@ export function simulateOnce(spec: SimulationSpec, baseSeed: string, runIndex: n
       fraudLossTotal,
       limitDeclines,
       totalSpent,
-      insufficientFundsSkipped
+      insufficientFundsSkipped,
+      totalEvents
     },
     timeSeries: series,
     settlementTimes,
@@ -571,6 +574,7 @@ export function aggregateRunResults(spec: SimulationSpec, runs: SimulationRunRes
   let limitDeclines = 0
   let totalSpent = 0
   let insufficientFundsSkipped = 0
+  let totalEvents = 0
   let preAuthMismatch = 0
   let preAuthCount = 0
   let incrementalAuthSuccess = 0
@@ -588,6 +592,7 @@ export function aggregateRunResults(spec: SimulationSpec, runs: SimulationRunRes
     limitDeclines += run.metrics.limitDeclines
     totalSpent += run.metrics.totalSpent
     insufficientFundsSkipped += run.metrics.insufficientFundsSkipped
+    totalEvents += run.metrics.totalEvents
     settlementTimes.push(...run.settlementTimes)
     authTimes.push(...run.authTimes)
     exposureEvents.push(...run.exposureEvents)
@@ -641,6 +646,7 @@ export function aggregateRunResults(spec: SimulationSpec, runs: SimulationRunRes
     limitDeclines,
     totalSpent,
     insufficientFundsSkipped,
+    totalEvents,
     fraudApprovalRateNoLimits: 0,
     fraudExposureTotalNoLimits: 0,
     fraudLossTotalNoLimits: 0
@@ -670,6 +676,10 @@ export function aggregateRunResults(spec: SimulationSpec, runs: SimulationRunRes
     label: `p${Math.round(p * 100)}`,
     value: percentile(exposureEvents.map((e) => e.amount), p)
   }))
+  const exposureDurationPercentiles = percentileLabels.map((p) => ({
+    label: `p${Math.round(p * 100)}`,
+    value: percentile(exposureDurations, p)
+  }))
   const exposureByUser = new Map<number, number>()
   for (const event of exposureEvents) {
     exposureByUser.set(event.userId, (exposureByUser.get(event.userId) ?? 0) + event.amount)
@@ -687,6 +697,7 @@ export function aggregateRunResults(spec: SimulationSpec, runs: SimulationRunRes
     settlementPercentiles,
     authPercentiles,
     exposurePercentiles,
+    exposureDurationPercentiles,
     retryHistogram,
     exposureEvents,
     scenarioSummary: buildScenarioSummary(spec),

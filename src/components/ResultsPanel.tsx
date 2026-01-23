@@ -48,6 +48,7 @@ export function ResultsPanel({ results }: Props) {
           <p>Auth time p95: {formatSeconds(metrics.p95AuthTimeSec)}</p>
           <p>Total spent: {metrics.totalSpent.toFixed(2)}</p>
           <p>Skipped (insufficient funds): {metrics.insufficientFundsSkipped}</p>
+          <p>Total events: {metrics.totalEvents}</p>
         </div>
         <div className="kpi-card">
           <h3>Settlement</h3>
@@ -148,6 +149,18 @@ export function ResultsPanel({ results }: Props) {
               <YAxis />
               <Tooltip />
               <Bar dataKey="value" fill="#facc15" />
+            </BarChart>
+          </ResponsiveContainer>
+        </div>
+        <div className="chart-card">
+          <h3>Exposure Duration Percentiles</h3>
+          <ResponsiveContainer width="100%" height={240}>
+            <BarChart data={results.exposureDurationPercentiles}>
+              <CartesianGrid strokeDasharray="3 3" />
+              <XAxis dataKey="label" />
+              <YAxis />
+              <Tooltip />
+              <Bar dataKey="value" fill="#f59e0b" />
             </BarChart>
           </ResponsiveContainer>
         </div>
