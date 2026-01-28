@@ -60,10 +60,8 @@ const spec: SimulationSpec = {
   },
   fraud: {
     enabled: false,
-    fraudAttemptRate: 0.01,
-    fraudAmountMultiplierMean: 1.4,
-    fraudAmountMultiplierP95: 2.2,
-    autoDeclineRate: 0.6
+    doubleSpendRate: 0.01,
+    blockOnFraudAttempt: true
   },
   spendLimits: {
     enabled: false,

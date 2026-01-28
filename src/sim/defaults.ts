@@ -98,10 +98,8 @@ export const defaultSpec: SimulationSpec = {
   },
   fraud: {
     enabled: true,
-    fraudAttemptRate: 0.008,
-    fraudAmountMultiplierMean: 1.4,
-    fraudAmountMultiplierP95: 2.2,
-    autoDeclineRate: 0.6
+    doubleSpendRate: 0.01,
+    blockOnFraudAttempt: true
   },
   spendLimits: {
     enabled: true,

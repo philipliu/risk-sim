@@ -65,10 +65,8 @@ export interface PreAuthSpec {
 
 export interface FraudSpec {
   enabled: boolean
-  fraudAttemptRate: number
-  fraudAmountMultiplierMean: number
-  fraudAmountMultiplierP95: number
-  autoDeclineRate: number
+  doubleSpendRate: number
+  blockOnFraudAttempt: boolean
 }
 
 export interface SpendLimitSpec {
@@ -209,5 +207,4 @@ export interface SimulationEvent {
   amount: number
   relatedAmount?: number
   settlement?: SettlementResult
-  isFraud?: boolean
 }

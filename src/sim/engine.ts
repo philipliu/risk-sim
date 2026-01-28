@@ -85,6 +85,7 @@ export function simulateOnce(spec: SimulationSpec, baseSeed: string, runIndex: n
   const balances: number[] = []
   const holdTotals = new Array(spec.userModel.users).fill(0)
   const holdCounts = new Array(spec.userModel.users).fill(0)
+  const blockedUsers = new Array(spec.userModel.users).fill(false)
   const pendingHoldSamples: number[] = []
   const userDailySpend = new Map<number, Map<number, number>>()
   const userTimeslotSpend = new Map<number, Map<number, number>>()
@@ -127,7 +128,7 @@ export function simulateOnce(spec: SimulationSpec, baseSeed: string, runIndex: n
 
   const authContext = new Map<
     number,
-    { requestTime: number; legsOut: number; issuerDone: number; amount: number; isFraud: boolean }
+    { requestTime: number; legsOut: number; issuerDone: number; amount: number }
   >()
   const holdByTxn = new Map<number, { userId: number; amount: number; approvalTime: number }>()
 
@@ -220,28 +221,15 @@ export function simulateOnce(spec: SimulationSpec, baseSeed: string, runIndex: n
 
     if (event.type === 'purchase') {
       const userId = event.userId
+      if (spec.fraud.blockOnFraudAttempt && blockedUsers[userId]) {
+        continue
+      }
       const availablePre = balances[userId] - holdTotals[userId]
       if (availablePre <= 0) {
         continue
       }
       let amount = event.amount
       totalEvents += 1
-      const isFraud = spec.fraud.enabled && rng() < spec.fraud.fraudAttemptRate
-      if (isFraud) {
-        fraudAttempts += 1
-        const multiplierSpec = {
-          type: 'lognormal' as const,
-          mean: spec.fraud.fraudAmountMultiplierMean,
-          p95: spec.fraud.fraudAmountMultiplierP95
-        }
-        amount *= sampleDistribution(rng, multiplierSpec)
-        const autoDecline = rng() < spec.fraud.autoDeclineRate
-        if (autoDecline) {
-          declines.push(event.txnId)
-          addTimeSeriesPoint(series, binSize, event.timeSec, 'declines')
-          continue
-        }
-      }
       const legs = sampleNetworkLegs(rng, spec.networkLatency)
       const processingSec = sampleDistribution(rng, spec.issuerProcessing) / 1000
       const issuerDone = event.timeSec + legs.t1 + legs.t2 + processingSec
@@ -254,8 +242,7 @@ export function simulateOnce(spec: SimulationSpec, baseSeed: string, runIndex: n
           requestTime: event.timeSec,
           legsOut: legs.t3 + legs.t4,
           issuerDone,
-          amount,
-          isFraud
+          amount
         })
         events.push({
           timeSec: issuerDone + settlementTime,
@@ -263,7 +250,6 @@ export function simulateOnce(spec: SimulationSpec, baseSeed: string, runIndex: n
           userId,
           txnId: event.txnId,
           amount,
-          isFraud,
           settlement
         })
       } else {
@@ -285,14 +271,10 @@ export function simulateOnce(spec: SimulationSpec, baseSeed: string, runIndex: n
           continue
         }
         approvals.push(event.txnId)
-        if (isFraud) fraudApprovals += 1
         authTimes.push(authTime)
         addTimeSeriesPoint(series, binSize, event.timeSec, 'approvals')
         applySpendLimits(userId, amount, event.timeSec)
         totalSpent += amount
-        if (isFraud) {
-          // Loss only occurs if on-chain settlement fails (double-spend) in mode B.
-        }
 
         const approvalTime = issuerDone
         if (spec.holds.enabled) {
@@ -304,8 +286,7 @@ export function simulateOnce(spec: SimulationSpec, baseSeed: string, runIndex: n
             type: 'hold_expiry',
             userId,
             txnId: event.txnId,
-            amount,
-            isFraud
+            amount
           })
           holdByTxn.set(event.txnId, { userId, amount, approvalTime })
         }
@@ -329,8 +310,7 @@ export function simulateOnce(spec: SimulationSpec, baseSeed: string, runIndex: n
             userId,
             txnId: event.txnId,
             amount: finalAmount,
-            relatedAmount: amount,
-            isFraud
+            relatedAmount: amount
           })
         } else {
           const settlement = simulateSettlement(rng, spec.stellar, issuerDone, spec.outage)
@@ -340,7 +320,6 @@ export function simulateOnce(spec: SimulationSpec, baseSeed: string, runIndex: n
             userId,
             txnId: event.txnId,
             amount,
-            isFraud,
             settlement
           })
         }
@@ -377,8 +356,7 @@ export function simulateOnce(spec: SimulationSpec, baseSeed: string, runIndex: n
         userId,
         txnId: event.txnId,
         amount: finalAmount,
-        settlement,
-        isFraud: event.isFraud
+        settlement
       })
     }
 
@@ -401,7 +379,15 @@ export function simulateOnce(spec: SimulationSpec, baseSeed: string, runIndex: n
         const ctx = authContext.get(event.txnId)
         if (!ctx) continue
         const authTime = (event.timeSec - ctx.requestTime) + ctx.legsOut
-        const confirmed = settlement.confirmed && !ctx.isFraud
+        const doubleSpendHit = spec.fraud.enabled && rng() < spec.fraud.doubleSpendRate
+        const confirmed = settlement.confirmed && !doubleSpendHit
+        const isDoubleSpend = spec.fraud.enabled && doubleSpendHit
+        if (isDoubleSpend) {
+          fraudAttempts += 1
+          if (spec.fraud.blockOnFraudAttempt) {
+            blockedUsers[userId] = true
+          }
+        }
         if (authTime > spec.authTimeoutSec || !confirmed) {
           if (authTime > spec.authTimeoutSec) {
             timeouts.push(event.txnId)
@@ -422,7 +408,6 @@ export function simulateOnce(spec: SimulationSpec, baseSeed: string, runIndex: n
         }
         balances[userId] -= event.amount
         approvals.push(event.txnId)
-        if (ctx.isFraud) fraudApprovals += 1
         authTimes.push(authTime)
         settlementTimes.push(settlement.timeSec)
         retries.push(settlement.retries)
@@ -433,7 +418,16 @@ export function simulateOnce(spec: SimulationSpec, baseSeed: string, runIndex: n
         const hold = holdByTxn.get(event.txnId)
         const approvalTime = hold?.approvalTime ?? event.timeSec
         const settlementTime = settlement.timeSec
-        let confirmed = settlement.confirmed && !event.isFraud
+        const doubleSpendHit = spec.fraud.enabled && rng() < spec.fraud.doubleSpendRate
+        const isDoubleSpend = spec.fraud.enabled && doubleSpendHit
+        if (isDoubleSpend) {
+          fraudAttempts += 1
+          fraudApprovals += 1
+          if (spec.fraud.blockOnFraudAttempt) {
+            blockedUsers[userId] = true
+          }
+        }
+        let confirmed = settlement.confirmed && !doubleSpendHit
         if (confirmed && balances[userId] >= event.amount) {
           balances[userId] -= event.amount
         } else {
@@ -454,7 +448,7 @@ export function simulateOnce(spec: SimulationSpec, baseSeed: string, runIndex: n
             endSec: endTime
           })
           exposureDurations.push(endTime - approvalTime)
-          if (event.isFraud) {
+          if (isDoubleSpend) {
             fraudExposureTotal += event.amount
             fraudLossTotal += event.amount
           }

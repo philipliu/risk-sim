@@ -686,51 +686,28 @@ export default function App() {
           <section>
             <h2>Fraud Model</h2>
             <Toggle
-              label="Enable fraud simulation"
+              label="Enable double-spend fraud tracking"
               checked={spec.fraud.enabled}
-              tooltip="Introduce fraudulent attempts with separate behavior"
+              tooltip="Treat on-chain settlement failures as fraud events"
               onChange={(value) => setSpec({ ...spec, fraud: { ...spec.fraud, enabled: value } })}
             />
             {spec.fraud.enabled && (
               <>
                 <SliderInput
-                  label="Fraud attempt rate"
-                  value={spec.fraud.fraudAttemptRate}
+                  label="Double-spend rate"
+                  value={spec.fraud.doubleSpendRate}
                   min={0}
-                  max={0.05}
+                  max={0.5}
                   step={0.001}
-                  tooltip="Probability a purchase attempt is fraudulent"
-                  onChange={(value) => setSpec({ ...spec, fraud: { ...spec.fraud, fraudAttemptRate: value } })}
+                  tooltip="Chance an approved auth later double-spends on settlement"
+                  onChange={(value) => setSpec({ ...spec, fraud: { ...spec.fraud, doubleSpendRate: value } })}
                 />
-                <SliderInput
-                  label="Auto-decline rate"
-                  value={spec.fraud.autoDeclineRate}
-                  min={0}
-                  max={1}
-                  step={0.05}
-                  tooltip="Share of fraud attempts blocked by pre-checks"
-                  onChange={(value) => setSpec({ ...spec, fraud: { ...spec.fraud, autoDeclineRate: value } })}
-                />
-                <SliderInput
-                  label="Fraud amount multiplier mean"
-                  value={spec.fraud.fraudAmountMultiplierMean}
-                  min={1}
-                  max={3}
-                  step={0.05}
-                  tooltip="Average fraud amount relative to normal ticket size"
+                <Toggle
+                  label="Block user on fraud attempt"
+                  checked={spec.fraud.blockOnFraudAttempt}
+                  tooltip="Prevent future purchases after a double-spend is detected"
                   onChange={(value) =>
-                    setSpec({ ...spec, fraud: { ...spec.fraud, fraudAmountMultiplierMean: value } })
-                  }
-                />
-                <SliderInput
-                  label="Fraud amount multiplier p95"
-                  value={spec.fraud.fraudAmountMultiplierP95}
-                  min={1}
-                  max={5}
-                  step={0.1}
-                  tooltip="P95 fraud amount relative to normal ticket size"
-                  onChange={(value) =>
-                    setSpec({ ...spec, fraud: { ...spec.fraud, fraudAmountMultiplierP95: value } })
+                    setSpec({ ...spec, fraud: { ...spec.fraud, blockOnFraudAttempt: value } })
                   }
                 />
               </>
@@ -846,6 +823,13 @@ export default function App() {
                           type="button"
                         >
                           Use params
+                        </button>
+                        <button
+                          className="ghost-button"
+                          onClick={() => setHistory((prev) => prev.filter((run) => run.id !== item.id))}
+                          type="button"
+                        >
+                          Delete
                         </button>
                       </div>
                     </div>
